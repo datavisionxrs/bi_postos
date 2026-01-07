@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostoBI Pro - Inteligência Visual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
+
+        .slide-enter { animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .data-bar { transition: height 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .gauge-fill { transition: stroke-dashoffset 1.5s ease-out; stroke-dasharray: 100 100; }
+        
+        /* Efeito Glassmorphism para os gráficos */
+        .glass-chart { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="bg-[#f8fafc] h-screen flex flex-col">
+
+    <!-- Header Executivo -->
+    <header class="bg-[#0f172a] text-white h-16 px-8 flex items-center justify-between shrink-0 border-b border-blue-500/30 z-50">
+        <div class="flex items-center gap-4">
+            <div class="relative group">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAXhWrEeRYNU8oAhonRIL_SFcmBRGlkceYqg&s" alt="Logo" class="w-10 h-10 object-contain bg-white rounded-xl p-0.5 shadow-xl border border-white/20">
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#0f172a] flex items-center justify-center">
+                    <div class="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                </div>
+            </div>
+            <div>
+                <span class="font-black text-lg tracking-tighter uppercase italic block leading-none">PostoBI <span class="text-blue-500">Analytics</span></span>
+                <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">Visual Intelligence Engine</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col text-right">
+                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Status da Conexão</span>
+                <span class="text-[10px] font-bold text-emerald-400 flex items-center gap-1 justify-end">
+                    <i data-lucide="database" class="w-3 h-3"></i> LIVE ERP CLOUD
+                </span>
+            </div>
+            <button class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+                Atualizar Dados
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Navegação de Slides -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-40 shadow-2xl">
+            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="layout-grid" class="w-4 h-4 text-blue-600"></i>
+                    <h3 class="text-[10px] font-black text-slate-900 uppercase tracking-widest">Painéis Estratégicos</h3>
+                </div>
+            </div>
+            <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+                <!-- Links dinâmicos -->
+            </nav>
+            <div class="p-6 bg-slate-50 border-t border-slate-200">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[9px] font-black text-slate-500 uppercase">Frequência de Uso</span>
+                    <span class="text-[9px] font-black text-blue-600">Alta</span>
+                </div>
+                <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-700"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Área Central (Slide Inteligente) -->
+        <main id="main-content" class="flex-1 overflow-hidden flex flex-col p-8 lg:p-12 bg-[#f8fafc]">
+            <!-- Conteúdo injetado via JS -->
+        </main>
+    </div>
+
+    <script>
+        const dashboardPages = [
+            {
+                id: 'geral',
+                title: '1. Visão Geral (Diretoria)',
+                icon: 'target',
+                description: 'Performance consolidada com indicadores de saúde financeira e alertas de desvio.',
+                kpis: ['Faturamento Total (R$)', 'Volume Consolidado (L)', 'Margem Bruta (%)', 'Ticket Médio'],
+                alerts: ['Margem abaixo da meta', 'Volume vs M-1 negativo']
+            },
+            {
+                id: 'comercial',
+                title: '2. Comercial e Vendas',
+                icon: 'fuel',
+                description: 'Mix de vendas e análise de volume por tipo de combustível e turno.',
+                kpis: ['Volume por Produto', 'Mix de Vendas %', 'Volume por Turno', 'Comparativo YoY']
+            },
+            {
+                id: 'precificacao',
+                title: '3. Precificação e Mercado',
+                icon: 'trending-up',
+                description: 'Análise de spread e monitorização de elasticidade preço vs volume.',
+                kpis: ['Preço Bomba vs Compra', 'Spread R$/L', 'Ranking Concorrência']
+            },
+            {
+                id: 'operacao',
+                title: '4. Estoque e Tanques',
+                icon: 'layers',
+                description: 'Telemetria visual de tanques e controle de perdas por evaporação.',
+                kpis: ['Estoque Atual (L)', 'Dias de Cobertura', 'Divergência Físico x Sist.']
+            },
+            {
+                id: 'rentabilidade',
+                title: '5. Rentabilidade Real',
+                icon: 'activity',
+                description: 'Decomposição de margem por canal de pagamento e custos operacionais.',
+                kpis: ['Margem por Forma Pgto', 'Taxas de Adquirência', 'Custo Operacional/L']
+            },
+            {
+                id: 'conveniencia',
+                title: '6. Loja de Conveniência',
+                icon: 'shopping-cart',
+                description: 'Análise de cross-selling e performance de produtos de alta margem.',
+                kpis: ['Faturamento Loja', 'Itens por Cupom', 'Curva ABC de Margem']
+            },
+            {
+                id: 'fidelidade',
+                title: '7. Fidelidade e Clientes',
+                icon: 'users',
+                description: 'Retenção de base e análise de Lifetime Value (LTV) por segmento.',
+                kpis: ['Recorrência 30d', 'Clientes Identificados', 'LTV por Segmento']
+            },
+            {
+                id: 'financeiro',
+                title: '8. Financeiro e Conciliação',
+                icon: 'dollar-sign',
+                description: 'Fecho de caixa e batimento automatizado de cartões e frotas.',
+                kpis: ['Conciliação Pendente', 'Chargebacks', 'Fluxo de Caixa 30d']
+            }
+        ];
+
+        let currentTab = 'geral';
+
+        function init() {
+            renderSidebar();
+            renderPage('geral');
+            lucide.createIcons();
+        }
+
+        function renderSidebar() {
+            const nav = document.getElementById('sidebar-nav');
+            nav.innerHTML = dashboardPages.map(page => `
+                <button onclick="setActiveTab('${page.id}')" class="w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all group ${currentTab === page.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}">
+                    <i data-lucide="${page.icon}" class="w-5 h-5 ${currentTab === page.id ? 'text-white' : 'text-blue-500 group-hover:scale-110 transition-transform'}"></i>
+                    <span class="font-bold text-[11px] truncate uppercase tracking-tight">${page.title}</span>
+                </button>
+            `).join('');
+        }
+
+        function setActiveTab(id) {
+            currentTab = id;
+            renderSidebar();
+            renderPage(id);
+            const index = dashboardPages.findIndex(p => p.id === id);
+            document.getElementById('progress-bar').style.width = `${((index + 1) / dashboardPages.length) * 100}%`;
+            lucide.createIcons();
+        }
+
+        function renderMockup(type) {
+            let visual = '';
+            
+            switch(type) {
+                case 'geral':
+                    visual = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                            <div class="glass-chart rounded-[2rem] p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest absolute top-6 left-6">Atingimento de Meta (Vol)</div>
+                                <svg class="w-48 h-48" viewBox="0 0 100 60">
+                                    <path d="M10,50 A40,40 0 0,1 90,50" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+                                    <path class="gauge-fill" d="M10,50 A40,40 0 0,1 90,50" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" style="stroke-dashoffset: 25"/>
+                                    <text x="50" y="45" text-anchor="middle" class="fill-white font-black text-[12px]">87.5%</text>
+                                </svg>
+                                <div class="flex gap-4 mt-2">
+                                    <div class="text-center"><p class="text-[8px] text-slate-500 font-bold uppercase">Meta</p><p class="text-xs font-black text-white">450k L</p></div>
+                                    <div class="text-center"><p class="text-[8px] text-slate-500 font-bold uppercase">Atual</p><p class="text-xs font-black text-white text-emerald-400">394k L</p></div>
+                                </div>
+                            </div>
+                            <div class="glass-chart rounded-[2rem] p-6 flex flex-col relative">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Faturamento Acumulado (Mês)</div>
+                                <div class="flex-1 flex items-end gap-1.5">
+                                    ${Array.from({length: 15}).map((_, i) => `
+                                        <div class="flex-1 group relative">
+                                            <div class="bg-blue-500/20 w-full rounded-t-sm data-bar" style="height: ${Math.random() * 80 + 20}%">
+                                                <div class="bg-blue-400 w-full h-1 absolute top-0 rounded-full shadow-[0_0_8px_#60a5fa] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'operacao':
+                    visual = `
+                        <div class="grid grid-cols-4 gap-4 h-full">
+                            ${[
+                                {n: 'Gas. Comum', c: '#f59e0b', p: 72},
+                                {n: 'Gas. Aditiv', c: '#d97706', p: 45},
+                                {n: 'Diesel S10', c: '#3b82f6', p: 88},
+                                {n: 'Etanol', c: '#10b981', p: 32}
+                            ].map(tank => `
+                                <div class="glass-chart rounded-[2rem] p-4 flex flex-col items-center group">
+                                    <div class="flex-1 w-full bg-slate-800 rounded-2xl border-2 border-slate-700 relative overflow-hidden flex flex-col justify-end">
+                                        <div class="data-bar w-full" style="height: ${tank.p}%; background-color: ${tank.c}77; border-top: 2px solid ${tank.c}"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none text-white font-black text-[12px]">${tank.p}%</div>
+                                    </div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase mt-3 tracking-tighter">${tank.n}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    break;
+                case 'comercial':
+                    visual = `
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+                            <div class="lg:col-span-5 glass-chart rounded-[2rem] p-6 flex flex-col">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mix por Produto (Volume)</div>
+                                <div class="flex-1 grid grid-cols-2 gap-2">
+                                    <div class="bg-blue-600/40 rounded-xl p-3 flex flex-col justify-between border border-blue-500/30">
+                                        <span class="text-[8px] font-black text-blue-200 uppercase">Diesel</span>
+                                        <span class="text-xl font-black text-white leading-none">52%</span>
+                                    </div>
+                                    <div class="bg-amber-600/40 rounded-xl p-3 flex flex-col justify-between border border-amber-500/30">
+                                        <span class="text-[8px] font-black text-amber-200 uppercase">Gasolina</span>
+                                        <span class="text-xl font-black text-white leading-none">38%</span>
+                                    </div>
+                                    <div class="bg-emerald-600/40 rounded-xl p-3 flex flex-col justify-between border border-emerald-500/30">
+                                        <span class="text-[8px] font-black text-emerald-200 uppercase">Etanol</span>
+                                        <span class="text-xl font-black text-white leading-none">10%</span>
+                                    </div>
+                                    <div class="bg-slate-700/40 rounded-xl p-3 flex items-center justify-center border border-slate-600 border-dashed">
+                                        <i data-lucide="plus" class="w-4 h-4 text-slate-500"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-7 glass-chart rounded-[2rem] p-6 flex flex-col">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Volume Médio por Turno</div>
+                                <div class="flex-1 flex items-center justify-around">
+                                    ${['06-14h', '14-22h', '22-06h'].map(shift => `
+                                        <div class="flex flex-col items-center gap-4">
+                                            <div class="w-16 h-16 rounded-full border-4 border-slate-700 border-t-blue-500 flex items-center justify-center">
+                                                <span class="text-[10px] font-black text-white">${Math.floor(Math.random()*40 + 20)}%</span>
+                                            </div>
+                                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">${shift}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rentabilidade':
+                    visual = `
+                        <div class="h-full glass-chart rounded-[2.5rem] p-8 flex flex-col">
+                            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Margem por Forma de Pagamento</div>
+                            <div class="flex-1 space-y-4">
+                                ${[
+                                    {l: 'Dinheiro / PIX', p: 95, v: 'R$ 0,72/L'},
+                                    {l: 'Cartão Débito', p: 85, v: 'R$ 0,65/L'},
+                                    {l: 'Cartão Crédito', p: 70, v: 'R$ 0,58/L'},
+                                    {l: 'Frota / Faturado', p: 90, v: 'R$ 0,68/L'}
+                                ].map(item => `
+                                    <div class="group">
+                                        <div class="flex justify-between text-[10px] font-bold text-slate-300 mb-1 tracking-tight">
+                                            <span>${item.l}</span>
+                                            <span class="text-blue-400">${item.v}</span>
+                                        </div>
+                                        <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="h-full bg-blue-500 data-bar" style="width: ${item.p}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between">
+                                <div><p class="text-[8px] text-slate-500 font-black uppercase">Custo Op/L</p><p class="text-sm font-black text-white">R$ 0,18</p></div>
+                                <div class="text-right"><p class="text-[8px] text-slate-500 font-black uppercase">EBITDA Est.</p><p class="text-sm font-black text-emerald-400">12.4%</p></div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'conveniencia':
+                    visual = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                            <div class="glass-chart rounded-[2rem] p-6 flex flex-col">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Top Categorias (Vendas)</div>
+                                <div class="flex-1 flex flex-col gap-2">
+                                    <div class="flex-1 bg-blue-600/20 border border-blue-500/30 rounded-xl p-3 flex justify-between items-center">
+                                        <span class="text-[10px] font-bold text-blue-100">Bebidas</span>
+                                        <span class="text-xs font-black text-white">42%</span>
+                                    </div>
+                                    <div class="flex-1 bg-emerald-600/20 border border-emerald-500/30 rounded-xl p-3 flex justify-between items-center">
+                                        <span class="text-[10px] font-bold text-emerald-100">Snacks</span>
+                                        <span class="text-xs font-black text-white">28%</span>
+                                    </div>
+                                    <div class="flex-1 bg-amber-600/20 border border-amber-500/30 rounded-xl p-3 flex justify-between items-center">
+                                        <span class="text-[10px] font-bold text-amber-100">Padaria</span>
+                                        <span class="text-xs font-black text-white">15%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass-chart rounded-[2rem] p-6 flex flex-col items-center justify-center text-center">
+                                <i data-lucide="shopping-bag" class="w-8 h-8 text-blue-500 mb-4 opacity-50"></i>
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Ticket Médio Loja</div>
+                                <div class="text-4xl font-black text-white mb-1 tracking-tighter">R$ 34,50</div>
+                                <div class="text-[10px] font-bold text-emerald-400 flex items-center gap-1 uppercase">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i> +12% vs M-1
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'fidelidade':
+                    visual = `
+                        <div class="h-full glass-chart rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden">
+                            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Segmentação de Clientes</div>
+                            <div class="flex-1 flex items-center justify-center">
+                                <div class="relative w-40 h-40">
+                                    <svg viewBox="0 0 36 36" class="w-full h-full rotate-[-90deg]">
+                                        <circle cx="18" cy="18" r="16" fill="none" stroke="#334155" stroke-width="4"></circle>
+                                        <circle cx="18" cy="18" r="16" fill="none" stroke="#3b82f6" stroke-width="4" stroke-dasharray="60, 100"></circle>
+                                        <circle cx="18" cy="18" r="16" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="25, 100" stroke-dashoffset="-60"></circle>
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span class="text-3xl font-black text-white leading-none">8.4k</span>
+                                        <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ativos</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-6">
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div> Varejo (60%)
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase text-right justify-end">
+                                     Frotista (25%) <div class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'financeiro':
+                    visual = `
+                        <div class="h-full glass-chart rounded-[2.5rem] p-8 flex flex-col">
+                            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Fluxo de Caixa / Recebíveis</div>
+                            <div class="flex-1 flex flex-col gap-6">
+                                <div class="flex-1 flex items-end gap-1 px-2">
+                                    ${Array.from({length: 12}).map((_, i) => `
+                                        <div class="flex-1 bg-blue-500/20 rounded-t-sm relative group h-full flex flex-col justify-end">
+                                            <div class="bg-blue-500 w-full data-bar rounded-t-sm" style="height: ${30 + Math.random() * 60}%"></div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-6">
+                                    <div>
+                                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">A Receber (Cartões)</p>
+                                        <p class="text-2xl font-black text-white leading-none tracking-tighter">R$ 142.500</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Taxas Cobradas</p>
+                                        <p class="text-2xl font-black text-rose-400 leading-none tracking-tighter">R$ 8.240</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'precificacao':
+                    visual = `
+                        <div class="h-full glass-chart rounded-[2rem] p-8 flex flex-col">
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spread Sugerido vs Real</div>
+                                <div class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-tighter italic shadow-[0_0_15px_rgba(16,185,129,0.2)]">Oportunidade: +R$ 0,05</div>
+                            </div>
+                            <div class="space-y-6 flex-1">
+                                ${['Preço Médio Compra', 'Custo Logístico (Frete)', 'Spread Operacional', 'Margem Líquida'].map((label, i) => `
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between text-[11px] font-bold text-slate-400"><span>${label}</span><span>R$ ${i === 0 ? '5,14' : i === 1 ? '0,12' : i === 2 ? '0,65' : '0,53'}</span></div>
+                                        <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="h-full bg-blue-500 rounded-full data-bar" style="width: ${100 - (i*20)}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+                default:
+                    visual = `
+                        <div class="h-full flex flex-col items-center justify-center text-slate-600 gap-4 border-4 border-slate-800 border-dashed rounded-[3rem]">
+                            <i data-lucide="bar-chart-big" class="w-10 h-10 text-slate-600 opacity-50"></i>
+                            <p class="text-[10px] font-black uppercase tracking-[0.5em]">Processamento Analítico</p>
+                        </div>
+                    `;
+            }
+
+            return `
+                <div class="bg-[#1e293b] rounded-[3rem] p-8 shadow-2xl relative h-full flex flex-col border border-slate-700/50">
+                    <div class="flex items-center justify-between mb-8 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="flex gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-rose-500/50 border border-rose-500/20"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-amber-500/50 border border-amber-500/20"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/50 border border-emerald-500/20"></div>
+                            </div>
+                            <div class="h-5 w-px bg-slate-700 mx-2"></div>
+                            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">Power BI Engine v4.0</span>
+                            </div>
+                        </div>
+                        <div class="h-8 w-8 bg-slate-800 rounded-xl flex items-center justify-center border border-slate-700">
+                            <i data-lucide="maximize" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-h-0">
+                        ${visual}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPage(id) {
+            const page = dashboardPages.find(p => p.id === id);
+            const main = document.getElementById('main-content');
+            
+            main.innerHTML = `
+                <div class="h-full flex flex-col slide-enter">
+                    <div class="mb-10 shrink-0">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100 shadow-sm flex items-center gap-2">
+                                <i data-lucide="${page.icon}" class="w-3 h-3"></i> Módulo Estratégico
+                            </div>
+                        </div>
+                        <h2 class="text-6xl font-black text-slate-900 tracking-tighter mb-4 leading-none">
+                            ${page.title.split('. ')[1]}
+                        </h2>
+                        <p class="text-xl text-slate-500 font-medium max-w-3xl leading-snug">
+                            ${page.description}
+                        </p>
+                    </div>
+
+                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-12 overflow-hidden">
+                        <div class="lg:col-span-5 flex flex-col gap-8 overflow-y-auto pr-6 custom-scrollbar pb-10">
+                            <div class="space-y-6">
+                                <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <div class="w-8 h-px bg-slate-200"></div> Indicadores Chave (KPI)
+                                </h4>
+                                <div class="grid grid-cols-1 gap-3">
+                                    ${page.kpis.map(kpi => `
+                                        <div class="flex items-center gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+                                            <div class="w-2 h-2 bg-blue-500 rounded-full group-hover:scale-150 transition-transform shadow-[0_0_8px_#3b82f6]"></div>
+                                            <span class="text-[14px] font-bold text-slate-800 tracking-tight">${kpi}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            ${page.alerts ? `
+                                <div class="bg-rose-50 border border-rose-100 rounded-[2.5rem] p-8 relative overflow-hidden shadow-inner">
+                                    <h4 class="text-[10px] font-black text-rose-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <div class="w-2 h-2 bg-rose-500 rounded-full animate-ping"></div>
+                                        Gatilhos de Notificação Automática
+                                    </h4>
+                                    <ul class="space-y-4">
+                                        ${page.alerts.map(alert => `
+                                            <li class="flex items-start gap-4">
+                                                <div class="mt-1 p-1 bg-rose-200 rounded-lg"><i data-lucide="chevron-right" class="w-3 h-3 text-rose-700"></i></div>
+                                                <span class="text-sm font-bold text-rose-900 leading-tight">${alert}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            ` : `
+                                <div class="bg-[#0f172a] rounded-[2.5rem] p-10 text-white relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 p-8 opacity-[0.05]"><i data-lucide="bar-chart-3" class="w-32 h-32"></i></div>
+                                    <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Arquitetura de Dados</h4>
+                                    <p class="text-base text-slate-300 font-bold leading-relaxed italic">
+                                        Monitorização em tempo real de margens líquidas e custos transacionais por operador logístico.
+                                    </p>
+                                </div>
+                            `}
+                        </div>
+
+                        <div class="lg:col-span-7 flex flex-col gap-6 overflow-hidden">
+                            <div class="flex-1 min-h-0 flex flex-col gap-4">
+                                <div class="flex-1">
+                                    ${renderMockup(page.id)}
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-6 shrink-0 pt-2">
+                                    <div class="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5 hover:border-emerald-200 transition-colors">
+                                        <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+                                        <div>
+                                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Performance</p>
+                                            <p class="text-2xl font-black text-slate-900 leading-none">+14.2%</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5 hover:border-rose-200 transition-colors">
+                                        <div class="p-4 bg-rose-50 text-rose-600 rounded-2xl"><i data-lucide="alert-circle" class="w-6 h-6"></i></div>
+                                        <div>
+                                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Divergências</p>
+                                            <p class="text-2xl font-black text-slate-900 leading-none">0.8%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                document.querySelectorAll('.data-bar').forEach(bar => {
+                    const h = bar.style.height;
+                    bar.style.height = '0';
+                    setTimeout(() => bar.style.height = h, 50);
+                });
+            }, 100);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
